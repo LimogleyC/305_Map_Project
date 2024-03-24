@@ -46,6 +46,7 @@ import com.esri.arcgisruntime.mapping.view.MapView;
 public class App extends Application {
 
   private MapView mapView;
+  private GraphicsOverlay graphicsOverlay;
 
 
   public static void main(String[] args) {
@@ -60,41 +61,16 @@ public void start(Stage stage) throws IOException {
     stage.setTitle("Four Lemmings Ltd.");
     stage.setWidth(1200);
     stage.setHeight(600);
-
-    // create a JavaFX scene with a stack pane as the root node
-    // and add it to the scene
+    graphicsOverlay = new GraphicsOverlay();
 
 
-    // Note: it is not best practice to store API keys in source code.
-    // The API key is referenced here for the convenience of this tutorial.
-    String yourApiKey = "PUT API KEY HERE";
-    ArcGISRuntimeEnvironment.setApiKey(yourApiKey);
+    createMap();
+    //Note: point is in the form Longitude, Latitude
+      //    need to add spatial refrence to point for it to display properly
+    addPoint(new Point(-113.5957277,53.50309322, SpatialReferences.getWgs84()));
 
-    // create a map view to display the map and add it to the stack pane
-    mapView = new MapView();
 
-    ArcGISMap map = new ArcGISMap(BasemapStyle.ARCGIS_TOPOGRAPHIC);
-    // set the map on the map view
-    mapView.setMap(map);
-    mapView.setViewpoint(new Viewpoint(53.5461, -113.4937, 250000));
-
-    GraphicsOverlay graphicsOverlay = new GraphicsOverlay();
-    mapView.getGraphicsOverlays().add(graphicsOverlay);
-    // create a point geometry with a location and spatial reference
-    Point point = new Point(-113.5957277,53.50309322, SpatialReferences.getWgs84());
-    // create an opaque orange point symbol with a opaque blue outline symbol
-    SimpleMarkerSymbol simpleMarkerSymbol =
-            new SimpleMarkerSymbol(SimpleMarkerSymbol.Style.CIRCLE, Color.ORANGE, 10);
-    SimpleLineSymbol blueOutlineSymbol =
-            new SimpleLineSymbol(SimpleLineSymbol.Style.SOLID, Color.BLUE, 2);
-
-    simpleMarkerSymbol.setOutline(blueOutlineSymbol);
-    // create a graphic with the point geometry and symbol
-    Graphic pointGraphic = new Graphic(point, simpleMarkerSymbol);
-
-    // add the point graphic to the graphics overlay
-    graphicsOverlay.getGraphics().add(pointGraphic);
-
+    //UI
     VBox Filter = new VBox();
     Filter.setPrefWidth(stage.getWidth() / 8);
     Filter.setPadding(new Insets(10,10,10,10));
@@ -164,6 +140,39 @@ public void start(Stage stage) throws IOException {
     stage.show();
 
   }
+
+
+  private void createMap(){
+      // create a map using the arcgis api
+
+      // Note: it is not best practice to store API keys in source code.
+      // The API key is referenced here for the convenience of this tutorial.
+      String yourApiKey = "";
+      ArcGISRuntimeEnvironment.setApiKey(yourApiKey);
+
+      mapView = new MapView();
+
+      ArcGISMap map = new ArcGISMap(BasemapStyle.ARCGIS_TOPOGRAPHIC);
+      // set the map on the map view
+      mapView.setMap(map);
+      mapView.setViewpoint(new Viewpoint(53.5461, -113.4937, 250000));
+  }
+
+  private void addPoint(Point point){
+      mapView.getGraphicsOverlays().add(graphicsOverlay);
+      // create an opaque orange point symbol with a opaque blue outline symbol
+      SimpleMarkerSymbol simpleMarkerSymbol =
+              new SimpleMarkerSymbol(SimpleMarkerSymbol.Style.CIRCLE, Color.RED, 10);       //can make different colors for different construction types
+      SimpleLineSymbol blueOutlineSymbol =
+              new SimpleLineSymbol(SimpleLineSymbol.Style.SOLID, Color.BLACK, 2);
+
+      simpleMarkerSymbol.setOutline(blueOutlineSymbol);
+      // create a graphic with the point geometry and symbol
+      Graphic pointGraphic = new Graphic(point, simpleMarkerSymbol);
+      // add the point graphic to the graphics overlay
+      graphicsOverlay.getGraphics().add(pointGraphic);
+  }
+
 
   /**
    * Stops and releases all resources used in application.
