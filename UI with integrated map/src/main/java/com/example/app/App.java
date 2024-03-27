@@ -14,6 +14,8 @@
 
 package com.example.app;
 
+import com.esri.arcgisruntime.geometry.GeometryEngine;
+import javafx.geometry.Point2D;
 import javafx.scene.paint.Color;
 import javafx.application.Application;
 import javafx.geometry.Insets;
@@ -68,6 +70,7 @@ public void start(Stage stage) throws IOException {
     //Note: point is in the form Longitude, Latitude
       //    need to add spatial refrence to point for it to display properly
     addPoint(new Point(-113.5957277,53.50309322, SpatialReferences.getWgs84()));
+    click();
 
 
     //UI
@@ -147,7 +150,7 @@ public void start(Stage stage) throws IOException {
 
       // Note: it is not best practice to store API keys in source code.
       // The API key is referenced here for the convenience of this tutorial.
-      String yourApiKey = "";
+      String yourApiKey = "AAPK27311aef2718478dae7001749a2b962dnvPlYefUnRx8Fd21z8gbJMvMwCqtH3N8mE-0pqLcO1oTYhYmKV8q8qxEuZZcHv-b";
       ArcGISRuntimeEnvironment.setApiKey(yourApiKey);
 
       mapView = new MapView();
@@ -173,6 +176,41 @@ public void start(Stage stage) throws IOException {
       graphicsOverlay.getGraphics().add(pointGraphic);
   }
 
+  private void click(){
+      mapView.setOnMouseClicked(e -> {
+          Point2D point = new Point2D(e.getX(), e.getY());
+
+          // create a map point from a point
+          Point mapPoint = mapView.screenToLocation(point);
+          // project user-tapped map point location
+          Point projectedPoint = (Point) GeometryEngine.project(mapPoint, SpatialReferences.getWgs84());
+
+          double mapScale = mapView.getMapScale();
+
+          // Calculate the tolerance based on the map scale
+          double pixelTolerance = 0.00001; // Adjust this value as needed
+          double tolerance = pixelTolerance * mapScale / 1000.0; // Convert pixel to map units
+          System.out.println("tol:" + tolerance);
+
+
+          // Check if any graphic is clicked
+          graphicsOverlay.getGraphics().forEach(graph -> {
+              Point markerPoint = (Point) graph.getGeometry();
+              double distance = calculateDistance(projectedPoint, markerPoint);
+              System.out.println("distance:" + distance);
+              if (distance <= tolerance) { 
+                  // Graphic is clicked
+                  System.out.println("Marker clicked!");
+                  // Perform your desired action here
+              }
+          });
+      });
+  }
+    // Method to calculate distance between two points
+    private double calculateDistance(Point point1, Point point2) {
+        return Math.sqrt(Math.pow(point1.getX() - point2.getX(), 2) +
+                Math.pow(point1.getY() - point2.getY(), 2));
+    }
 
   /**
    * Stops and releases all resources used in application.
