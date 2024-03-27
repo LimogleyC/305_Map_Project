@@ -150,7 +150,7 @@ public void start(Stage stage) throws IOException {
 
       // Note: it is not best practice to store API keys in source code.
       // The API key is referenced here for the convenience of this tutorial.
-      String yourApiKey = "AAPK27311aef2718478dae7001749a2b962dnvPlYefUnRx8Fd21z8gbJMvMwCqtH3N8mE-0pqLcO1oTYhYmKV8q8qxEuZZcHv-b";
+      String yourApiKey = "";
       ArcGISRuntimeEnvironment.setApiKey(yourApiKey);
 
       mapView = new MapView();
