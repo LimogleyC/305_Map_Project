@@ -20,6 +20,9 @@ module com.example.app {
 
     // requires SLF4j module
     requires org.slf4j.nop;
+    requires java.datatransfer;
+    requires java.desktop;
+    requires java.net.http;
 
     exports com.example.app;
 }
