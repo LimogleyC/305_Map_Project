@@ -2,6 +2,8 @@ package com.example.app;
 
 import java.awt.*;
 import java.util.Objects;
+import com.esri.arcgisruntime.geometry.Point;
+import com.esri.arcgisruntime.geometry.SpatialReferences;
 
 public class ConstructionSite implements Comparable<ConstructionSite> {
     private String fileNumber; // unique identifier
@@ -21,7 +23,7 @@ public class ConstructionSite implements Comparable<ConstructionSite> {
         this.reason = reason;
         this.street = new Street(streetName, roadSegments, intersectingStreets, hourRestrictions);
         this.affected = new Affected(bike, pedestrian, streetParking);
-        this.location = new Location(latitude, longitude, new Point((int) longitude, (int)latitude));
+        this.location = new Location(latitude, longitude, new Point(longitude, latitude, SpatialReferences.getWgs84()));
     }
 
     @Override
