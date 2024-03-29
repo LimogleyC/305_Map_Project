@@ -28,7 +28,7 @@ import javafx.scene.text.Font;
 import javafx.stage.Stage;
 
 import java.io.IOException;
-
+import java.util.ArrayList;
 
 
 import com.esri.arcgisruntime.mapping.view.Graphic;
@@ -51,97 +51,41 @@ public class App extends Application {
   private GraphicsOverlay graphicsOverlay;
 
 
-  public static void main(String[] args) {
-    Application.launch(args);
+  public static void main(String[] args) throws Exception {
+      ArrayList<ConstructionSite> data = ConstructionSites.getWebData();
+      System.out.println(data.size());
+      // uncomment line below to see what the data looks like
+      //System.out.println(data);
+
+      // account number that exists
+      PropertyAssessment property = PropertyAssessments.getProperty("10884521");
+      System.out.println("REAL PROPERTY");
+      System.out.println(property);
+      // account number that does not
+      PropertyAssessment noproperty = PropertyAssessments.getProperty("0");
+      System.out.println("\nNO PROPERTY");
+      System.out.println(noproperty);
+
+      Application.launch(args);
   }
 
 
   @Override
-public void start(Stage stage) throws IOException {
+  public void start(Stage stage) throws IOException {
 
-    // set the title and size of the stage and show it
-    stage.setTitle("Four Lemmings Ltd.");
-    stage.setWidth(1200);
-    stage.setHeight(600);
-    graphicsOverlay = new GraphicsOverlay();
-
-
-    createMap();
-    //Note: point is in the form Longitude, Latitude
-      //    need to add spatial refrence to point for it to display properly
-    addPoint(new Point(-113.5957277,53.50309322, SpatialReferences.getWgs84()));
-    click();
+        // set the title and size of the stage and show it
+        stage.setTitle("Four Lemmings Ltd.");
+        stage.setWidth(1200);
+        stage.setHeight(600);
+        graphicsOverlay = new GraphicsOverlay();
 
 
-    //UI
-    VBox Filter = new VBox();
-    Filter.setPrefWidth(stage.getWidth() / 8);
-    Filter.setPadding(new Insets(10,10,10,10));
-    Label filterLabel = new Label("Filter");
-    filterLabel.setAlignment(Pos.CENTER);
-    filterLabel.setStyle("-fx-font-size: 24px; -fx-font-weight: bold; -fx-text-fill: white;");
-//        Filter.getChildren().add(filterLabel);
-    Filter.setStyle("-fx-background-color: red;");
-
-
-    Label assessmentType = new Label("Assessment Type") ;
-    assessmentType.setFont(new Font("Arial", 14));
-    assessmentType.setPadding(new Insets(5));
-//        Filter.getChildren().add(assessmentType);
-    ComboBox<String> filters = new ComboBox<>();
-    filters.getItems().addAll("*", "COMMERCIAL", "RESIDENTIAL", "FARMLAND", "NONRES MUNICIPAL/RES EDUCATION");
-    filters.setPadding(new Insets(5));
-//        Filter.getChildren().add(filters);
-
-    Label assessmentRange = new Label("Assessed Value Range") ;
-    assessmentRange.setFont(new Font("Arial", 14));
-    assessmentRange.setPadding(new Insets(10));
-//        Filter.getChildren().add(assessmentRange);
-    TextField minValue = new TextField();
-    minValue.setPromptText("Min Value");
-    minValue.setPadding(new Insets(10,10,10,10));
-//        Filter.getChildren().add(minValue);
-    TextField maxValue = new TextField();
-    maxValue.setPromptText("Max Value");
-    maxValue.setPadding(new Insets(10,10,10,10));
-
-    Filter.getChildren().addAll(filterLabel, assessmentType, filters, assessmentRange, minValue, maxValue);
-
-
-
-//        Filter.setBackground(new Background(new BackgroundFill(Color.RED, null, null)));
-
-
-    HBox Map    = new HBox();
-    Map.setStyle("-fx-background-color: blue;");
-    Map.setPrefWidth(stage.getWidth() - stage.getWidth() / 4);
-    TabPane mapTab = new TabPane();
-    Tab map2 = new Tab("Map");
-    Tab data = new Tab("Data");
-    // Add content to the tabs (you can customize this)
-    map2.setContent(mapView);
-    data.setContent(new Label("Content for Tab 2"));
-    mapTab.getTabs().addAll(map2, data);
-    mapTab.setTabClosingPolicy(TabPane.TabClosingPolicy.UNAVAILABLE);
-    mapTab.prefWidthProperty().bind(Map.widthProperty());
-    Map.getChildren().add(mapTab);
-
-
-    // Create an ImageView to display the image
-
-
-//        Map.setBackground(new Background(new BackgroundFill(WHITE, null, null)));
-
-    VBox Info   = new VBox() ;
-    Info.setStyle("-fx-background-color: green;");
-
-//        Info.setBackground(new Background(new BackgroundFill(Color.RED, null, null)));
-    Info.setPrefWidth(  stage.getWidth() / 8);
-    HBox windowFilterMapInfo = new HBox(Filter, Map, Info);
-    Scene scene2 = new Scene(windowFilterMapInfo,1200,600);
-    stage.setScene(scene2);
-    stage.show();
-
+        createMap();
+        //Note: point is in the form Longitude, Latitude
+          //    need to add spatial refrence to point for it to display properly
+        addPoint(new Point(-113.5957277,53.50309322, SpatialReferences.getWgs84()));
+        checkClick();
+        UI(stage);
   }
 
 
@@ -149,7 +93,6 @@ public void start(Stage stage) throws IOException {
       // create a map using the arcgis api
 
       // Note: it is not best practice to store API keys in source code.
-      // The API key is referenced here for the convenience of this tutorial.
       String yourApiKey = "";
       ArcGISRuntimeEnvironment.setApiKey(yourApiKey);
 
@@ -162,6 +105,7 @@ public void start(Stage stage) throws IOException {
   }
 
   private void addPoint(Point point){
+      //adds a point graphic to the map based on a given point with spatial reference
       mapView.getGraphicsOverlays().add(graphicsOverlay);
       // create an opaque orange point symbol with a opaque blue outline symbol
       SimpleMarkerSymbol simpleMarkerSymbol =
@@ -176,7 +120,8 @@ public void start(Stage stage) throws IOException {
       graphicsOverlay.getGraphics().add(pointGraphic);
   }
 
-  private void click(){
+  private void checkClick(){
+      //checks of a point graphic on a map was clicked
       mapView.setOnMouseClicked(e -> {
           Point2D point = new Point2D(e.getX(), e.getY());
 
@@ -184,33 +129,104 @@ public void start(Stage stage) throws IOException {
           Point mapPoint = mapView.screenToLocation(point);
           // project user-tapped map point location
           Point projectedPoint = (Point) GeometryEngine.project(mapPoint, SpatialReferences.getWgs84());
-
           double mapScale = mapView.getMapScale();
 
           // Calculate the tolerance based on the map scale
           double pixelTolerance = 0.00001; // Adjust this value as needed
           double tolerance = pixelTolerance * mapScale / 1000.0; // Convert pixel to map units
-          System.out.println("tol:" + tolerance);
-
 
           // Check if any graphic is clicked
           graphicsOverlay.getGraphics().forEach(graph -> {
               Point markerPoint = (Point) graph.getGeometry();
               double distance = calculateDistance(projectedPoint, markerPoint);
-              System.out.println("distance:" + distance);
-              if (distance <= tolerance) { 
+              if (distance <= tolerance) {
                   // Graphic is clicked
                   System.out.println("Marker clicked!");
-                  // Perform your desired action here
+                  pointClicked(markerPoint);
               }
           });
       });
   }
-    // Method to calculate distance between two points
-    private double calculateDistance(Point point1, Point point2) {
-        return Math.sqrt(Math.pow(point1.getX() - point2.getX(), 2) +
-                Math.pow(point1.getY() - point2.getY(), 2));
-    }
+
+  private double calculateDistance(Point point1, Point point2) {
+      //used to calculate the distance between 2 points
+      return Math.sqrt(Math.pow(point1.getX() - point2.getX(), 2) +
+              Math.pow(point1.getY() - point2.getY(), 2));
+  }
+
+  private void pointClicked(Point mapPoint){
+      //parameter: point of graphic clicked
+      //add what we want to happen to this part
+
+  }
+
+  private void UI(Stage stage){
+      // UI elements for the application
+
+      // VBox for Filter section
+      VBox Filter = new VBox();
+      Filter.setPrefWidth(stage.getWidth() / 8);
+      Filter.setPadding(new Insets(10,10,10,10));
+      Label filterLabel = new Label("Filter");
+      filterLabel.setAlignment(Pos.CENTER);
+      filterLabel.setStyle("-fx-font-size: 24px; -fx-font-weight: bold; -fx-text-fill: white;");
+      Filter.setStyle("-fx-background-color: red;");
+
+      // Label for Assessment Type
+      Label assessmentType = new Label("Assessment Type");
+      assessmentType.setFont(new Font("Arial", 14));
+      assessmentType.setPadding(new Insets(5));
+
+      // Creating a ComboBox for filters with specific options
+      ComboBox<String> filters = new ComboBox<>();
+      filters.getItems().addAll("*", "COMMERCIAL", "RESIDENTIAL", "FARMLAND", "NONRES MUNICIPAL/RES EDUCATION");
+      filters.setPadding(new Insets(5));
+
+      Label assessmentRange = new Label("Assessed Value Range");
+      assessmentRange.setFont(new Font("Arial", 14));
+      assessmentRange.setPadding(new Insets(10));
+
+      // TextFields for minimum and maximum values
+      TextField minValue = new TextField();
+      minValue.setPromptText("Min Value");
+      minValue.setPadding(new Insets(10,10,10,10));
+      TextField maxValue = new TextField();
+      maxValue.setPromptText("Max Value");
+      maxValue.setPadding(new Insets(10,10,10,10));
+
+      // Adding UI elements to the Filter VBox
+      Filter.getChildren().addAll(filterLabel, assessmentType, filters, assessmentRange, minValue, maxValue);
+
+
+      // HBox for Map section
+      HBox Map = new HBox();
+      Map.setStyle("-fx-background-color: blue;");
+      Map.setPrefWidth(stage.getWidth() - stage.getWidth() / 4);
+      TabPane mapTab = new TabPane();
+      Tab map2 = new Tab("Map");
+      Tab data = new Tab("Data");
+
+      // Adding content to the tabs
+      map2.setContent(mapView);
+      data.setContent(new Label("Content for Tab 2"));
+      mapTab.getTabs().addAll(map2, data);
+
+      mapTab.setTabClosingPolicy(TabPane.TabClosingPolicy.UNAVAILABLE);
+      mapTab.prefWidthProperty().bind(Map.widthProperty());
+      Map.getChildren().add(mapTab);
+
+
+      // VBox for Info section
+      VBox Info = new VBox();
+      Info.setStyle("-fx-background-color: green;");
+      Info.setPrefWidth(stage.getWidth() / 8);
+
+      // HBox to hold Filter, Map, and Info sections
+      HBox windowFilterMapInfo = new HBox(Filter, Map, Info);
+      Scene scene2 = new Scene(windowFilterMapInfo, 1200, 600);
+      stage.setScene(scene2);
+      stage.show();
+  }
 
   /**
    * Stops and releases all resources used in application.
