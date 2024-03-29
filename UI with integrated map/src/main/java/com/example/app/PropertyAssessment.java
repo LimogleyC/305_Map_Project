@@ -1,6 +1,5 @@
 package com.example.app;
 
-import java.awt.*;
 import com.esri.arcgisruntime.geometry.Point;
 import com.esri.arcgisruntime.geometry.SpatialReferences;
 
