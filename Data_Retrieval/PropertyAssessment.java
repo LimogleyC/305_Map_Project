@@ -1,6 +1,5 @@
 package Data_Retrieval;
 
-import java.awt.*;
 import com.esri.arcgisruntime.geometry.Point;
 import com.esri.arcgisruntime.geometry.SpatialReferences;
 
