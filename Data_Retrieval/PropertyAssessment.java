@@ -1,6 +1,7 @@
 package Data_Retrieval;
 
-import java.awt.*;
+import com.esri.arcgisruntime.geometry.Point;
+import com.esri.arcgisruntime.geometry.SpatialReferences;
 
 public class PropertyAssessment implements Comparable<PropertyAssessment> {
     private int account; // unique identifier
@@ -8,7 +9,7 @@ public class PropertyAssessment implements Comparable<PropertyAssessment> {
 
     public PropertyAssessment(int account, double latitude, double longitude) {
         this.account = account;
-        this.location = new Location(latitude, longitude, new Point((int)longitude, (int)latitude));
+        this.location = new Location(latitude, longitude, new Point(longitude, latitude, SpatialReferences.getWgs84()));
     }
 
     @Override

@@ -1,7 +1,7 @@
 package Data_Retrieval;
 
-import java.awt.*;
 import java.util.Objects;
+import com.esri.arcgisruntime.geometry.Point;
 
 public class Location {
     private double latitude;
