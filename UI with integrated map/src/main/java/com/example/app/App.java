@@ -16,6 +16,7 @@ package com.example.app;
 
 import com.esri.arcgisruntime.geometry.GeometryEngine;
 import javafx.geometry.Point2D;
+import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.paint.Color;
 import javafx.application.Application;
 import javafx.geometry.Insets;
@@ -71,7 +72,7 @@ public class App extends Application {
 
 
   @Override
-  public void start(Stage stage) throws IOException {
+  public void start(Stage stage) throws Exception {
 
         // set the title and size of the stage and show it
         stage.setTitle("Four Lemmings Ltd.");
@@ -93,7 +94,7 @@ public class App extends Application {
       // create a map using the arcgis api
 
       // Note: it is not best practice to store API keys in source code.
-      String yourApiKey = "";
+      String yourApiKey = "AAPK27311aef2718478dae7001749a2b962dnvPlYefUnRx8Fd21z8gbJMvMwCqtH3N8mE-0pqLcO1oTYhYmKV8q8qxEuZZcHv-b";
       ArcGISRuntimeEnvironment.setApiKey(yourApiKey);
 
       mapView = new MapView();
@@ -160,7 +161,7 @@ public class App extends Application {
 
   }
 
-  private void UI(Stage stage){
+  private void UI(Stage stage) throws Exception {
       // UI elements for the application
 
       // VBox for Filter section
@@ -170,11 +171,12 @@ public class App extends Application {
       Label filterLabel = new Label("Filter");
       filterLabel.setAlignment(Pos.CENTER);
       filterLabel.setStyle("-fx-font-size: 24px; -fx-font-weight: bold; -fx-text-fill: white;");
-      Filter.setStyle("-fx-background-color: red;");
+      Filter.setStyle("-fx-background-color: blue;");
 
       // Label for Assessment Type
       Label assessmentType = new Label("Assessment Type");
       assessmentType.setFont(new Font("Arial", 14));
+      assessmentType.setTextFill(Color.WHITE);
       assessmentType.setPadding(new Insets(5));
 
       // Creating a ComboBox for filters with specific options
@@ -184,6 +186,7 @@ public class App extends Application {
 
       Label assessmentRange = new Label("Assessed Value Range");
       assessmentRange.setFont(new Font("Arial", 14));
+      assessmentRange.setTextFill(Color.WHITE);
       assessmentRange.setPadding(new Insets(10));
 
       // TextFields for minimum and maximum values
@@ -197,6 +200,35 @@ public class App extends Application {
       // Adding UI elements to the Filter VBox
       Filter.getChildren().addAll(filterLabel, assessmentType, filters, assessmentRange, minValue, maxValue);
 
+      //tableview for construction data
+      // Create a TableView with appropriate data types
+      TableView<ConstructionSite> tableView = new TableView<>();
+
+      // Create columns for each field of Construction site class
+      TableColumn<ConstructionSite, String> fileNumber = new TableColumn<>("File Number");
+      fileNumber.setCellValueFactory(new PropertyValueFactory<>("fileNumber"));
+
+      TableColumn<ConstructionSite, Dates> dates = new TableColumn<>("Dates");
+      dates.setCellValueFactory(new PropertyValueFactory<>("dates"));
+
+      TableColumn<ConstructionSite, String> reason = new TableColumn<>("Reason");
+      reason.setCellValueFactory(new PropertyValueFactory<>("reason"));
+
+      TableColumn<ConstructionSite, Street> street = new TableColumn<>("Street");
+      street.setCellValueFactory(new PropertyValueFactory<>("street"));
+
+      TableColumn<ConstructionSite, Affected> affected = new TableColumn<>("Affected");
+      affected.setCellValueFactory(new PropertyValueFactory<>("affected"));
+
+      TableColumn<ConstructionSite, Location> location = new TableColumn<>("Location");
+      location.setCellValueFactory(new PropertyValueFactory<>("location"));
+
+      // Add columns to tableview
+      tableView.getColumns().addAll(fileNumber, dates, reason, street, affected, location);
+
+      // Get items from arraylist to populate data
+      ArrayList<ConstructionSite> data2 = ConstructionSites.getWebData();
+      tableView.getItems().addAll(data2);
 
       // HBox for Map section
       HBox Map = new HBox();
@@ -208,7 +240,7 @@ public class App extends Application {
 
       // Adding content to the tabs
       map2.setContent(mapView);
-      data.setContent(new Label("Content for Tab 2"));
+      data.setContent(tableView);
       mapTab.getTabs().addAll(map2, data);
 
       mapTab.setTabClosingPolicy(TabPane.TabClosingPolicy.UNAVAILABLE);
@@ -218,7 +250,7 @@ public class App extends Application {
 
       // VBox for Info section
       VBox Info = new VBox();
-      Info.setStyle("-fx-background-color: green;");
+      Info.setStyle("-fx-background-color: blue;");
       Info.setPrefWidth(stage.getWidth() / 8);
 
       // HBox to hold Filter, Map, and Info sections
