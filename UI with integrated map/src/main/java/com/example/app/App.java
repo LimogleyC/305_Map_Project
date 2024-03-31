@@ -55,6 +55,7 @@ public class App extends Application {
   private ArrayList<ConstructionSite> data;
 
   private Stage UI;
+  private Graphic lastClickedGraphic;
 
 
   public static void main(String[] args) throws Exception {
@@ -84,6 +85,7 @@ public class App extends Application {
         stage.setWidth(1200);
         stage.setHeight(600);
         graphicsOverlay = new GraphicsOverlay();
+        lastClickedGraphic = null;
 
 
         createMap();
@@ -123,10 +125,10 @@ public class App extends Application {
       // create an opaque orange point symbol with a opaque blue outline symbol
       SimpleMarkerSymbol simpleMarkerSymbol =
               new SimpleMarkerSymbol(SimpleMarkerSymbol.Style.CIRCLE, Color.RED, 10);       //can make different colors for different construction types
-      SimpleLineSymbol blueOutlineSymbol =
+      SimpleLineSymbol blackOutlineSymbol =
               new SimpleLineSymbol(SimpleLineSymbol.Style.SOLID, Color.BLACK, 2);
 
-      simpleMarkerSymbol.setOutline(blueOutlineSymbol);
+      simpleMarkerSymbol.setOutline(blackOutlineSymbol);
       // create a graphic with the point geometry and symbol
       Graphic pointGraphic = new Graphic(point, simpleMarkerSymbol);
       // add the point graphic to the graphics overlay
@@ -149,15 +151,26 @@ public class App extends Application {
           double tolerance = pixelTolerance * mapScale / 1000.0; // Convert pixel to map units
 
           // Check if any graphic is clicked
-          graphicsOverlay.getGraphics().forEach(graph -> {
-              Point markerPoint = (Point) graph.getGeometry();
+          for (Graphic graphic : graphicsOverlay.getGraphics()) {
+              Point markerPoint = (Point) graphic.getGeometry();
               double distance = calculateDistance(projectedPoint, markerPoint);
               if (distance <= tolerance) {
                   // Graphic is clicked
                   System.out.println("Marker clicked!");
                   pointClicked(markerPoint);
+
+                  // Change color to green
+                  changeColor(graphic, Color.GREEN);
+
+                  // Revert color of last clicked graphic (if exists)
+                  if (lastClickedGraphic != null && !lastClickedGraphic.equals(graphic)) {
+                      changeColor(lastClickedGraphic, Color.RED); // Change back to original color
+                  }
+
+                  // Update last clicked graphic
+                  lastClickedGraphic = graphic;
               }
-          });
+          }
       });
   }
 
@@ -179,6 +192,15 @@ public class App extends Application {
       fillInfo(infoV, site);
 
   }
+
+    private void changeColor(Graphic graphic, Color color) {
+        SimpleMarkerSymbol symbol = new SimpleMarkerSymbol(SimpleMarkerSymbol.Style.CIRCLE, color, 10);
+        SimpleLineSymbol blackOutlineSymbol =
+                new SimpleLineSymbol(SimpleLineSymbol.Style.SOLID, Color.BLACK, 2);
+
+        symbol.setOutline(blackOutlineSymbol);
+        graphic.setSymbol(symbol);
+    }
 
   private void UI(Stage stage) throws Exception {
       // UI elements for the application
