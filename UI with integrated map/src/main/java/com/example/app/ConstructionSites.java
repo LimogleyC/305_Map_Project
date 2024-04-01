@@ -292,4 +292,25 @@ public class ConstructionSites {
         // calculate the result
         return(c * r);
     }
+
+    /**
+     * Loop through the provided list data of ConstructionSite objects and
+     * copy any objects that are within the given distance range from the
+     * supplied lat and long point.
+     * @param data the list that contains ConstructionSite objects
+     * @param range the range the site must be in to be included
+     * @param property the point being compared to for distance
+     * @return filteredData - a new list that contains all the sites
+     * from the filter
+     */
+    public static ArrayList<ConstructionSite> filterDistance(ArrayList<ConstructionSite> data, double range, PropertyAssessment property) {
+        ArrayList<ConstructionSite> filteredData =  new ArrayList<>();
+        for (ConstructionSite site : data) {
+            if (distance(property.getLocation().getLatitude(), site.getLocation().getLatitude(), 
+                    property.getLocation().getLongitude(), site.getLocation().getLongitude()) <= range) {
+                filteredData.add(site);
+            }
+        }
+        return filteredData;
+    }
 }
