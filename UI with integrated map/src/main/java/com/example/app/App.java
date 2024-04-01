@@ -60,6 +60,7 @@ public class App extends Application {
   private ArrayList<ConstructionSite> data;
 
   private Stage UI;
+  private TableView<ConstructionSite> dataTable;
   private Graphic lastClickedGraphic;
 
 
@@ -263,10 +264,10 @@ public class App extends Application {
         VBox filterBox = createFilterBox(stage.getWidth());
 
         // Create the table view for displaying construction site data
-        TableView<ConstructionSite> constructionSiteTableView = createConstructionSiteTableView();
+        this.dataTable = createConstructionSiteTableView();
 
         // Create the map section containing the MapView and construction site table view
-        HBox mapSection = createMapSection(stage, mapView, constructionSiteTableView);
+        HBox mapSection = createMapSection(stage, mapView, this.dataTable);
 
         // Create the info section for displaying detailed information about selected construction sites
         VBox infoSection = createInfoSection(stage.getWidth());
@@ -490,6 +491,10 @@ public class App extends Application {
             return true;
         }
     }
+    private void updateTable(ArrayList<ConstructionSite> data){
+        this.dataTable.getItems().clear();
+        this.dataTable.getItems().addAll(data);
+    }
     /**
      * Filters data based on user inputs provided through the UI elements within the specified VBox.
      *
@@ -543,10 +548,17 @@ public class App extends Application {
         }
 
         // If no data matches the filter criteria, return
-        if (data.isEmpty()) {this.graphicsOverlay.getGraphics().clear(); return;}
+        if (data.isEmpty()) {this.graphicsOverlay.getGraphics().clear(); this.dataTable.getItems().clear(); return;}
+        if(this.data.equals(data) && fileNumSite != null) {
+            this.graphicsOverlay.getGraphics().clear();
+            this.dataTable.getItems().clear();
+            addPoint(fileNumSite.getLocation().getPoint(), Color.VIOLET);
+            this.dataTable.getItems().add(fileNumSite);
+        }
         else {
             // Clear existing graphics and add new points to the graphics overlay based on filtered data
             this.graphicsOverlay.getGraphics().clear();
+            updateTable(data);
             for (ConstructionSite site : data) {
                 addPoint(site.getLocation().getPoint());
             }
@@ -556,6 +568,7 @@ public class App extends Application {
             }
             if (fileNumSite != null) {
                 addPoint(fileNumSite.getLocation().getPoint(), Color.VIOLET);
+                this.dataTable.getItems().add(fileNumSite);
             }
         }
     }
@@ -621,6 +634,7 @@ public class App extends Application {
 
         // Clear existing graphics and redraw points on the graphics overlay
         this.graphicsOverlay.getGraphics().clear();
+        updateTable(this.data);
         for (ConstructionSite site: this.data) {
             addPoint(site.getLocation().getPoint());
         }
