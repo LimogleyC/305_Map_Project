@@ -5,6 +5,7 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.time.LocalDateTime;
 import java.util.*;
 import com.esri.arcgisruntime.geometry.Point;
 
@@ -217,6 +218,53 @@ public class ConstructionSites {
     }
 
     /**
+     * Check if the date is within the specified range.
+     * @param start The starting date of the range.
+     * @param end The ending date of the range.
+     * @param from The date to check if it falls within the range.
+     * @param to The date to check if it falls within the range.
+     * @return boolean indicating whether the date falls within the range.
+     */
+    private static boolean isDateWithinRange(LocalDateTime start, LocalDateTime end, LocalDateTime from, LocalDateTime to) {
+        // Check if 'from' date is not before 'start' and not after 'end',
+        // or if 'to' date is not before 'start' and not after 'end'.
+        return !from.isBefore(start) && !from.isAfter(end) || !to.isBefore(start) && !to.isAfter(end);
+    }
+
+    /**
+     * Loop through the provided list data of ConstructionSite objects and
+     * copy any objects that have the same street parking affect as the filter
+     * string into a new list.
+     * @param data The list that contains ConstructionSite objects.
+     * @param fromDate The starting date of the filtering range.
+     * @param toDate The ending date of the filtering range.
+     * @return filteredData - a new list that contains all the sites
+     * from the filter.
+     */
+    public static ArrayList<ConstructionSite> filterTime(ArrayList<ConstructionSite> data, LocalDateTime fromDate, LocalDateTime toDate) {
+        // Initialize a new list to store filtered data
+        ArrayList<ConstructionSite> filteredData =  new ArrayList<>();
+
+        // Iterate through each ConstructionSite object in the provided list
+        for (ConstructionSite site : data) {
+            // Parse start and finish dates of the site
+            LocalDateTime startDate = LocalDateTime.parse(site.getDates().getStartDate());
+            LocalDateTime finishDate = LocalDateTime.parse(site.getDates().getFinishDate());
+
+            // Check if the site falls within the specified date range
+            boolean isWithinRange = isDateWithinRange(startDate, finishDate, fromDate, toDate);
+
+            // If the site is within the range, add it to the filteredData list
+            if (isWithinRange) {
+                filteredData.add(site);
+                System.out.println("Hooray"); // Print a confirmation message
+            }
+        }
+        return filteredData; // Return the filtered list
+    }
+
+
+    /**
      * Find the distance between two points using their longitude and latitude values
      * and output it in kilometers.
      * Reference:
@@ -266,9 +314,12 @@ public class ConstructionSites {
      */
     public static ArrayList<ConstructionSite> filterDistance(ArrayList<ConstructionSite> data, double range, PropertyAssessment property) {
         ArrayList<ConstructionSite> filteredData =  new ArrayList<>();
+        // Iterate through each ConstructionSite in the provided data
         for (ConstructionSite site : data) {
-            if (distance(property.getLocation().getLatitude(), site.getLocation().getLatitude(), 
+            // Calculate the distance between the property and the ConstructionSite using their coordinates
+            if (distance(property.getLocation().getLatitude(), site.getLocation().getLatitude(),
                     property.getLocation().getLongitude(), site.getLocation().getLongitude()) <= range) {
+                // If the distance is within the specified range, add the ConstructionSite to the filtered list
                 filteredData.add(site);
             }
         }
