@@ -16,7 +16,12 @@ package com.example.app;
 
 import com.esri.arcgisruntime.geometry.GeometryEngine;
 import javafx.geometry.Point2D;
+import javafx.scene.control.Button;
+import javafx.scene.control.Label;
+import javafx.scene.control.ScrollPane;
+import javafx.scene.control.TextField;
 import javafx.scene.control.cell.PropertyValueFactory;
+import javafx.scene.image.Image;
 import javafx.scene.paint.Color;
 import javafx.application.Application;
 import javafx.geometry.Insets;
@@ -27,11 +32,10 @@ import javafx.scene.layout.VBox;
 import javafx.scene.text.Font;
 import javafx.stage.Stage;
 
+
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.Set;
 
 
 import com.esri.arcgisruntime.mapping.view.Graphic;
@@ -56,6 +60,7 @@ public class App extends Application {
   private ArrayList<ConstructionSite> data;
 
   private Stage UI;
+  private TableView<ConstructionSite> dataTable;
   private Graphic lastClickedGraphic;
 
 
@@ -76,6 +81,7 @@ public class App extends Application {
         stage.setTitle("Four Lemmings Ltd.");
         stage.setWidth(1200);
         stage.setHeight(600);
+
 
         // Initialize graphics overlay and last clicked graphic
         graphicsOverlay = new GraphicsOverlay();
@@ -258,10 +264,10 @@ public class App extends Application {
         VBox filterBox = createFilterBox(stage.getWidth());
 
         // Create the table view for displaying construction site data
-        TableView<ConstructionSite> constructionSiteTableView = createConstructionSiteTableView();
+        this.dataTable = createConstructionSiteTableView();
 
         // Create the map section containing the MapView and construction site table view
-        HBox mapSection = createMapSection(stage, mapView, constructionSiteTableView);
+        HBox mapSection = createMapSection(stage, mapView, this.dataTable);
 
         // Create the info section for displaying detailed information about selected construction sites
         VBox infoSection = createInfoSection(stage.getWidth());
@@ -276,8 +282,10 @@ public class App extends Application {
 
         // Create the scene and set it to the primary stage
         Scene scene2 = new Scene(windowFilterMapInfo, 1200, 600);
+
         stage.setScene(scene2);
         this.UI = stage;
+        // Set the application icon
         stage.show();
     }
 
@@ -451,20 +459,6 @@ public class App extends Application {
     }
 
     /**
-     * Checks the value of the provided Spinner for a specific distance value.
-     *
-     * @param distance The Spinner to be checked.
-     */
-    private static void distanceCheck(Spinner distance){
-        Integer value = (Integer) distance.getValue();
-        if (value == 50) {
-            System.out.println("The numeric Spinner is empty.");
-        } else {
-            System.out.println("The numeric Spinner contains a value.");
-        }
-    }
-
-    /**
      * Checks if the selected obstruction type in the provided ComboBox is 'None'.
      *
      * @param obstruction The ComboBox containing obstruction types.
@@ -497,6 +491,10 @@ public class App extends Application {
             return true;
         }
     }
+    private void updateTable(ArrayList<ConstructionSite> data){
+        this.dataTable.getItems().clear();
+        this.dataTable.getItems().addAll(data);
+    }
     /**
      * Filters data based on user inputs provided through the UI elements within the specified VBox.
      *
@@ -504,23 +502,20 @@ public class App extends Application {
      * @throws Exception if an error occurs during the filtering process.
      */
     private void filterData(VBox filter) throws Exception {
-        // Set to store filtered ConstructionSite objects
-        Set<ConstructionSite> fData = new HashSet<ConstructionSite>();
-
+        // Array to store all relevant data points
+        ArrayList<ConstructionSite> data = this.data;
         // Extract TextField for file number from the filter VBox
         TextField fileNum = (TextField) filter.getChildren().get(2);
+        ConstructionSite fileNumSite = null;
         // Check if file number TextField is not empty
         if (check_textfield(fileNum)) {
             // Filter ConstructionSite based on file number and add to filtered data set
-            ConstructionSite fileNumSite = fileNumFilter(fileNum.getText());
-            fData.add(fileNumSite);
+            fileNumSite = fileNumFilter(fileNum.getText());
         }
 
         // Extract TextField for account number and Spinner for distance from the filter VBox
         TextField accountNum = (TextField) filter.getChildren().get(4);
         Spinner distance = (Spinner) filter.getChildren().get(6);
-        // Perform distance check
-        distanceCheck(distance);
         PropertyAssessment propertyAssessment = null;
         // Check if account number TextField is not empty
         if (check_textfield(accountNum)) {
@@ -529,8 +524,7 @@ public class App extends Application {
             // If PropertyAssessment is found, filter ConstructionSites within the specified distance range
             if (propertyAssessment != null) {
                 double range = ((Integer) distance.getValue()).doubleValue();
-                ArrayList<ConstructionSite> accNumSites = ConstructionSites.filterDistance(this.data, range, propertyAssessment);
-                fData.addAll(accNumSites);
+                data = ConstructionSites.filterDistance(data, range, propertyAssessment);
             }
         }
 
@@ -539,8 +533,7 @@ public class App extends Application {
         // Check if obstruction ComboBox has a selected value other than 'None'
         if (check_obstruction(obstruction)) {
             // Filter ConstructionSites based on obstruction type
-            ArrayList<ConstructionSite> obstructionSites = obstructionFilter(String.valueOf(obstruction.getValue()));
-            fData.addAll(obstructionSites);
+            data = obstructionFilter(data, String.valueOf(obstruction.getValue()));
         }
 
         // Extract DatePickers for 'from' and 'to' dates from the filter VBox
@@ -551,21 +544,31 @@ public class App extends Application {
             // Filter ConstructionSites based on the selected date range
             LocalDateTime fromDate = fromDatePicker.getValue().atStartOfDay();
             LocalDateTime toDate = toDatePicker.getValue().atStartOfDay();
-            ArrayList<ConstructionSite> dateSites = ConstructionSites.filterTime(this.data, fromDate, toDate);
-            fData.addAll(dateSites);
+            data = ConstructionSites.filterTime(data, fromDate, toDate);
         }
 
         // If no data matches the filter criteria, return
-        if (fData.isEmpty()) return;
+        if (data.isEmpty()) {this.graphicsOverlay.getGraphics().clear(); this.dataTable.getItems().clear(); return;}
+        if(this.data.equals(data) && fileNumSite != null) {
+            this.graphicsOverlay.getGraphics().clear();
+            this.dataTable.getItems().clear();
+            addPoint(fileNumSite.getLocation().getPoint(), Color.VIOLET);
+            this.dataTable.getItems().add(fileNumSite);
+        }
         else {
             // Clear existing graphics and add new points to the graphics overlay based on filtered data
             this.graphicsOverlay.getGraphics().clear();
-            for (ConstructionSite site : fData) {
+            updateTable(data);
+            for (ConstructionSite site : data) {
                 addPoint(site.getLocation().getPoint());
             }
             // If PropertyAssessment is involved in the filter, mark its location with a green point
             if (propertyAssessment != null) {
                 addPoint(propertyAssessment.getLocation().getPoint(), Color.GREEN);
+            }
+            if (fileNumSite != null) {
+                addPoint(fileNumSite.getLocation().getPoint(), Color.VIOLET);
+                this.dataTable.getItems().add(fileNumSite);
             }
         }
     }
@@ -589,17 +592,17 @@ public class App extends Application {
      * @return ArrayList of ConstructionSites matching the provided obstruction type.
      * @throws Exception if an error occurs during filtering.
      */
-    private ArrayList<ConstructionSite> obstructionFilter(String obstruction) throws Exception {
+    private ArrayList<ConstructionSite> obstructionFilter(ArrayList<ConstructionSite> data, String obstruction) throws Exception {
         String yes = "Yes";
         // Perform different filters based on the obstruction type
         if (obstruction.equals("Bike path")) {
-            return ConstructionSites.filterBikeAffected(this.data, yes);
+            return ConstructionSites.filterBikeAffected(data, yes);
         }
         if (obstruction.equals("Pedestrian")) {
-            return ConstructionSites.filterPedestrianAffected(this.data, yes);
+            return ConstructionSites.filterPedestrianAffected(data, yes);
         }
         if (obstruction.equals("Street Parking")) {
-            return ConstructionSites.filterParkingAffected(this.data, yes);
+            return ConstructionSites.filterParkingAffected(data, yes);
         }
         if (obstruction.equals("All")) {
             return ConstructionSites.getWebData();
@@ -631,6 +634,7 @@ public class App extends Application {
 
         // Clear existing graphics and redraw points on the graphics overlay
         this.graphicsOverlay.getGraphics().clear();
+        updateTable(this.data);
         for (ConstructionSite site: this.data) {
             addPoint(site.getLocation().getPoint());
         }
