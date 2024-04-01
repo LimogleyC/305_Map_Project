@@ -20,7 +20,6 @@ import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.paint.Color;
 import javafx.application.Application;
 import javafx.geometry.Insets;
-import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.layout.HBox;
@@ -28,9 +27,11 @@ import javafx.scene.layout.VBox;
 import javafx.scene.text.Font;
 import javafx.stage.Stage;
 
-import java.io.IOException;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.Set;
 
 
 import com.esri.arcgisruntime.mapping.view.Graphic;
@@ -96,6 +97,7 @@ public class App extends Application {
 
         for (ConstructionSite site : data) {
 //            addPoint(new Point(site.getLocation().getLatitude(),site.getLocation().getLongitude(), SpatialReferences.getWgs84()));
+            System.out.println(site.getDates().getStartDate());
             addPoint(site.getLocation().getPoint());
         }
         checkClick();
@@ -227,7 +229,7 @@ public class App extends Application {
       stage.show();
   }
 
-    public static VBox createFilterBox(double stageWidth) {
+    public VBox createFilterBox(double stageWidth) {
         VBox filterBox = new VBox();
         filterBox.setPrefWidth(stageWidth / 8);
         filterBox.setPadding(new Insets(10, 10, 10, 10));
@@ -239,7 +241,7 @@ public class App extends Application {
         return filterBox;
     }
 
-    private static void addUIElements(VBox filterBox) {
+    private void addUIElements(VBox filterBox) {
         // Title
         Label titleLabel = new Label("Filter");
         titleLabel.setStyle("-fx-font-size: 24px; -fx-font-weight: bold; -fx-text-fill: white;");
@@ -287,7 +289,7 @@ public class App extends Application {
 
         // Creating a ComboBox for filters with obstruction type
         ComboBox<String> obstructionFilter = new ComboBox<>();
-        obstructionFilter.getItems().addAll("All", "Bike path", "Pedestrian", "Street Parking");
+        obstructionFilter.getItems().addAll("None", "All", "Bike path", "Pedestrian", "Street Parking");
         obstructionFilter.getSelectionModel().selectFirst();
         obstructionFilter.setPadding(new Insets(5));
 
@@ -316,14 +318,142 @@ public class App extends Application {
         DatePicker datePickerTo = new DatePicker();
         datePickerTo.setValue(LocalDate.now());
         datePickerTo.setStyle("-fx-padding: 0 0 0 5;");
+        // Make sure the two dates are in subsequent order
+        datePickerTo.setDayCellFactory(picker -> new DateCell() {
+            @Override
+            public void updateItem(LocalDate date, boolean empty) {
+                super.updateItem(date, empty);
+                setDisable(empty || date.isBefore(LocalDate.now()));
+            }});
+        datePickerFrom.valueProperty().addListener((observable, oldValue, newValue) -> {
+            // Update minimum date for datePickerTo
+            datePickerTo.setDayCellFactory(picker -> new DateCell() {
+                @Override
+                public void updateItem(LocalDate date, boolean empty) {
+                    super.updateItem(date, empty);
+                    setDisable(empty || date.isBefore(newValue));
+                }
+            });
 
-        Label gap = new Label();
+            // Check if selected date in datePickerTo is invalid
+            if (datePickerTo.getValue() != null && datePickerTo.getValue().isBefore(newValue)) {
+                datePickerTo.setValue(newValue); // Set it to the current date
+            }
+        });
+
+        Label gap1 = new Label();
         Button filter = new Button("Filter Data");
+        Label gap2 = new Label();
+        Button clear = new Button("Clear Fields");
 
         // Adding UI elements to the Filter VBox
         filterBox.getChildren().addAll(titleLabel, fileNumLabel, fileNumTxt, assessmentLabel, accountNumTxt,
-                distanceLabel, distanceSpinner,  obstructionLabel,obstructionFilter,
-                dateLabel, fromLabel, datePickerFrom, toLabel, datePickerTo, gap, filter);
+                distanceLabel, distanceSpinner,  obstructionLabel, obstructionFilter,
+                dateLabel, fromLabel, datePickerFrom, toLabel, datePickerTo, gap1, filter, gap2, clear);
+        clear.setOnAction(e -> clearFields(filterBox));
+        filter.setOnAction(e -> {
+            try {
+                filterData(filterBox);
+            } catch (Exception ex) {
+                throw new RuntimeException(ex);
+            }
+        });
+    }
+    private boolean check_textfield(TextField text){
+        if (text.getText().trim().isEmpty()) {return false;}
+        else return true;
+    }
+    private static void distanceCheck(Spinner distance){
+        Integer value = (Integer) distance.getValue();
+        if (value == 50) {
+            System.out.println("The numeric Spinner is empty.");
+        } else {
+            System.out.println("The numeric Spinner contains a value.");
+        }
+    }
+    private boolean check_obstruction(ComboBox obstruction){
+        String obs = (String) obstruction.getValue();
+        if (obs.equals("None"))return false;
+        else return true;
+    }
+    private boolean check_date(DatePicker datePicker1, DatePicker datePicker2){
+        LocalDateTime date1 = datePicker1.getValue().atStartOfDay();
+        LocalDateTime date2 = datePicker2.getValue().atStartOfDay();
+        LocalDateTime today = LocalDate.now().atStartOfDay();
+
+        if (date1.equals(today) && date2.equals(today)) return false;
+        else return true;
+    }
+    private void filterData(VBox filter) throws Exception {
+        Set<ConstructionSite> fData = new HashSet<ConstructionSite>();
+
+        TextField  fileNum     = (TextField)  filter.getChildren().get(2);
+        if (check_textfield(fileNum)){
+            ConstructionSite fileNumSite = fileNumFilter(fileNum.getText());
+            fData.add(fileNumSite);
+        }
+        TextField  accountNum  = (TextField)  filter.getChildren().get(4);
+        if (check_textfield(accountNum)){
+            ConstructionSite accNumSite = fileNumFilter(fileNum.getText());
+            fData.add(accNumSite);
+        }
+        Spinner    distance    = (Spinner)    filter.getChildren().get(6);
+        distanceCheck(distance);
+        ComboBox   obstruction = (ComboBox)   filter.getChildren().get(8);
+        if (check_obstruction(obstruction)){
+            ArrayList<ConstructionSite> obstructionSites = obstructionFilter(String.valueOf(obstruction.getValue()));
+            fData.addAll(obstructionSites);
+        }
+
+        DatePicker fromDatePicker    = (DatePicker) filter.getChildren().get(11);
+        DatePicker toDatePicker      = (DatePicker) filter.getChildren().get(13);
+
+        if (check_date(fromDatePicker, toDatePicker)){
+            LocalDateTime fromDate = fromDatePicker.getValue().atStartOfDay();
+            LocalDateTime toDate = toDatePicker.getValue().atStartOfDay();
+            ArrayList<ConstructionSite> dateSites = ConstructionSites.filterTime(this.data, fromDate, toDate);
+            fData.addAll(dateSites);
+        }
+
+//        System.out.println(fromDate);
+//        System.out.println(toDate);
+
+        if (fData.isEmpty()) return;
+        else{
+            this.graphicsOverlay.getGraphics().clear() ;
+            for (ConstructionSite site: fData) addPoint(site.getLocation().getPoint());
+        }
+    }
+    private ConstructionSite fileNumFilter(String fileNum){
+        ConstructionSite site = ConstructionSites.findFileNum(fileNum, this.data);
+        return site;
+    }
+    private ArrayList<ConstructionSite> obstructionFilter(String obstruction) throws Exception {
+        String yes = "Yes";
+        if (obstruction.equals("Bike path")) return ConstructionSites.filterBikeAffected(this.data, yes);
+        if (obstruction.equals("Pedestrian")) return ConstructionSites.filterPedestrianAffected(this.data, yes);
+        if (obstruction.equals("Street Parking")) return ConstructionSites.filterParkingAffected(this.data, yes);
+        if (obstruction.equals("All")) return ConstructionSites.getWebData();
+        return null;
+    }
+
+    private void clearFields(VBox filter){
+        TextField  fileNum     = (TextField)  filter.getChildren().get(2);
+        TextField  accountNum  = (TextField)  filter.getChildren().get(4);
+        Spinner    distance    = (Spinner)    filter.getChildren().get(6);
+        ComboBox   obstruction = (ComboBox)   filter.getChildren().get(8);
+        DatePicker fromDate    = (DatePicker) filter.getChildren().get(11);
+        DatePicker toDate      = (DatePicker) filter.getChildren().get(13);
+
+        fileNum.clear();
+        accountNum.clear();
+        distance.getValueFactory().setValue(50);
+        obstruction.getSelectionModel().selectFirst();
+        fromDate.setValue(LocalDate.now());
+        toDate.setValue(LocalDate.now());
+
+
+
     }
     public static TableView<ConstructionSite> createConstructionSiteTableView() throws Exception {
         TableView<ConstructionSite> tableView = new TableView<>();

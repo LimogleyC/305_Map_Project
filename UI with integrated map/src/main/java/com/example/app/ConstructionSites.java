@@ -5,6 +5,7 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.time.LocalDateTime;
 import java.util.*;
 import com.esri.arcgisruntime.geometry.Point;
 
@@ -211,6 +212,44 @@ public class ConstructionSites {
         for (ConstructionSite site : data) {
             if (site.getAffected().getStreetParking().equals(filter)) {
                 filteredData.add(site);
+            }
+        }
+        return filteredData;
+    }
+
+    /**
+     * Check if the date is within the specified range
+     * @param from - input date
+     * @param start - input start
+     * @param end - input end
+     * @return boolean
+     */
+    private static boolean isDateWithinRange(LocalDateTime start, LocalDateTime end, LocalDateTime from, LocalDateTime to) {
+        return !from.isBefore(start) && !from.isAfter(end) || !to.isBefore(start) && !to.isAfter(end);
+    }
+    /**
+     * Loop through the provided list data of ConstructionSite objects and
+     * copy any objects that have the same street parking affect as the filter
+     * string into a new list.
+     * @param data the list that contains ConstructionSite objects
+     * @param fromDate the affect used to filter the new list
+     * @return filteredData - a new list that contains all the sites
+     * from the filter
+     */
+    public static ArrayList<ConstructionSite> filterTime(ArrayList<ConstructionSite> data, LocalDateTime fromDate, LocalDateTime toDate) {
+        ArrayList<ConstructionSite> filteredData =  new ArrayList<>();
+        for (ConstructionSite site : data) {
+//            LocalDateTime fromDate = LocalDateTime.parse(from);
+//            LocalDateTime toDate = LocalDateTime.parse(to);
+
+            LocalDateTime startDate = LocalDateTime.parse(site.getDates().getStartDate());
+            LocalDateTime finishDate = LocalDateTime.parse(site.getDates().getFinishDate());
+
+            boolean isWithinRange = isDateWithinRange(startDate, finishDate,fromDate, toDate) ;
+
+            if (isWithinRange) {
+                filteredData.add(site);
+                System.out.println("Hooray");
             }
         }
         return filteredData;
