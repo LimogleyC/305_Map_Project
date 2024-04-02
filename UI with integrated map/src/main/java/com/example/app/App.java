@@ -671,7 +671,7 @@ public class App extends Application {
         // Add columns to tableview
         tableView.getColumns().addAll(fileNumber, dates, reason, street, affected, location);
 
-        // Get items from arraylist to populate data (you can replace this with your actual data)
+        // Get items from arraylist to populate data
         ArrayList<ConstructionSite> data = ConstructionSites.getWebData();
         tableView.getItems().addAll(data);
 
