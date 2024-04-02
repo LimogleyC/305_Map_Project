@@ -627,7 +627,7 @@ public class App extends Application {
         // Clear input fields
         fileNum.clear();
         accountNum.clear();
-        distance.getValueFactory().setValue(50); // Reset distance Spinner to default value
+        distance.getValueFactory().setValue(5); // Reset distance Spinner to default value
         obstruction.getSelectionModel().selectFirst(); // Reset obstruction ComboBox to default selection
         fromDate.setValue(LocalDate.now()); // Set from DatePicker to current date
         toDate.setValue(LocalDate.now()); // Set to DatePicker to current date
